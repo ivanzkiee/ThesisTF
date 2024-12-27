@@ -134,7 +134,7 @@
 
         .footer {
             margin-top: 20px;
-            font-size: 12px;
+            font-size: 10px;
             color: #888;
             text-align: center;
         }
@@ -142,12 +142,12 @@
         .logo-top-left{
             position: absolute;
             width: 150px;
-            height: auto;
+            height: auto
         }
 
         .logo-top-left {
-            top: 20px;
-            left: 110px;
+            top: 30px;
+            left: 130px;
         }
     </style>
 </head>
@@ -182,15 +182,13 @@
                     <a href="#">Forgot Password?</a>
                 </div>
                 <button type="submit" class="login-button">Login</button>
-            </form>
+            </form>  
+             <div class="left">
+            <img src="logo.png" alt="Logo">
+        </div>
             <div class="footer">
                 Developed for Agustin and Son Realty Development Corporation
             </div>
-            <div class="container">
-             <div class="left">
-            <img src="logo.png" alt="Logo">
-
-        </div>
         </div>
     </div>
 </body>
