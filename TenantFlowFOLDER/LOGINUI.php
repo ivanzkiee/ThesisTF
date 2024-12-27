@@ -12,17 +12,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f9f9f9;
+            min-height: 100vh;
+            background-color: #f0f0f0;
         }
+
         .container {
             display: flex;
-            max-width: 1200px;
             width: 90%;
+            max-width: 1200px;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
+
         .left {
             flex: 1;
             background-color: #f7f7f7;
@@ -30,18 +33,21 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            text-align: center;
+            padding: 40px;
         }
+
         .left img {
             max-width: 80%;
+            height: auto;
             margin-bottom: 20px;
         }
-        .left h2 {
-            color: #333;
+
+        .left p {
             font-size: 24px;
-            margin: 0;
+            font-weight: bold;
+            color: #333;
         }
+
         .right {
             flex: 1;
             padding: 40px;
@@ -49,20 +55,39 @@
             flex-direction: column;
             justify-content: center;
         }
+
         .right h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 28px;
             color: #333;
+            margin-bottom: 10px;
         }
+
+        .right p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .right a {
+            color: #e53935;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .right a:hover {
+            text-decoration: underline;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 5px;
             font-size: 14px;
             color: #555;
+            margin-bottom: 5px;
         }
+
         .form-group input {
             width: 100%;
             padding: 10px;
@@ -70,72 +95,102 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         .form-group input:focus {
+            border-color: #e53935;
             outline: none;
-            border-color: #007BFF;
         }
-        .links {
+
+        .form-options {
             display: flex;
             justify-content: space-between;
             font-size: 14px;
+            margin-bottom: 20px;
         }
-        .links a {
-            color: #007BFF;
-            text-decoration: none;
+
+        .form-options a {
+            color: #e53935;
         }
-        .links a:hover {
+
+        .form-options a:hover {
             text-decoration: underline;
         }
+
         .login-button {
-            background-color: #FF3B30;
+            width: 100%;
+            background-color: #e53935;
             color: #fff;
-            padding: 10px 20px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
         }
+
         .login-button:hover {
-            background-color: #E32A1F;
+            background-color: #d32f2f;
         }
+
         .footer {
             margin-top: 20px;
-            text-align: center;
             font-size: 12px;
-            color: #aaa;
+            color: #888;
+            text-align: center;
+        }
+
+        .logo-top-left{
+            position: absolute;
+            width: 150px;
+            height: auto;
+        }
+
+        .logo-top-left {
+            top: 20px;
+            left: 110px;
         }
     </style>
 </head>
 <body>
+    <!-- Top-Left Logo -->
+    <img src="logo.png" alt="TenantFlow Logo" class="logo-top-left">
+
     <div class="container">
+        <!-- Left Section -->
         <div class="left">
-            <img src="placeholder-logo.png" alt="Logo">
-            <h2>Lease with ease</h2>
+            <img src="Lease with ease.png" alt="Lease With Ease">
         </div>
+
+        <!-- Right Section -->
+         
         <div class="right">
             <h2>Sign in</h2>
             <p>New here? <a href="signup.php">Sign up here!</a></p>
-            <form action="login.php" method="post">
+            <form action="#" method="post">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="Enter your email address" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your Password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
-                <div class="form-group">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Remember me</label>
-                </div>
-                <div class="links">
-                    <a href="forgot-password.php">Forgot Password?</a>
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" name="remember"> Remember me
+                    </label>
+                    <a href="#">Forgot Password?</a>
                 </div>
                 <button type="submit" class="login-button">Login</button>
             </form>
             <div class="footer">
                 Developed for Agustin and Son Realty Development Corporation
             </div>
+            <div class="container">
+             <div class="left">
+            <img src="logo.png" alt="Logo">
+
+        </div>
         </div>
     </div>
 </body>
