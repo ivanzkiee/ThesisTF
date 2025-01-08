@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Manage Tenants{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Tenant Management Dashboard</h2>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Tenants</h5>
+                    <h2>{{ tenants|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Occupied Rooms</h5>
+                    <h2>{{ tenants|selectattr('unit_number')|list|length }}/20</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Available Rooms</h5>
+                    <h2>{{ 20 - (tenants|selectattr('unit_number')|list|length) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Occupancy Rate</h5>
+                    <h2>{{ "%.1f"|format(tenants|selectattr('unit_number')|list|length / 20 * 100) }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Occupancy Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Room Occupancy</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for floor in range(1, 5) %}
+                <div class="col-md-3">
+                    <h6>Floor {{ floor }}</h6>
+                    <div class="d-flex flex-wrap">
+                        {% for room in range(1, 6) %}
+                        {% set room_number = '%d%02d'|format(floor, room) %}
+                        {% set is_occupied = false %}
+                        {% for tenant in tenants %}
+                            {% if tenant.unit_number == room_number %}
+                                {% set is_occupied = true %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="room-box m-1 p-2 {{ 'bg-success text-white' if is_occupied else 'bg-light' }}"
+                             style="width: 60px; height: 60px; border-radius: 5px; text-align: center;">
+                            {{ room_number }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant Table with Notes -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tenant Details</h5>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addNoteModal">
+                <i class="fa fa-plus"></i> Add Note
+            </button>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Unit</th>
+                        <th>Phone</th>
+                        <th>Notes/Reminders</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tenant in tenants %}
+                    <tr>
+                        <td>{{ tenant.first_name }}</td>
+                        <td>{{ tenant.email }}</td>
+                        <td>{{ tenant.unit_number or 'Not assigned' }}</td>
+                        <td>{{ tenant.phone or 'Not provided' }}</td>
+                        <td>
+                            {% if tenant.notes %}
+                            <ul class="list-unstyled mb-0">
+                                {% for note in tenant.notes[-2:] %}
+                                <li class="small">
+                                    <i class="fa fa-sticky-note text-warning"></i>
+                                    {{ note.data[:50] }}...
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <span class="text-muted">No notes</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('views.manage_tenant', tenant_id=tenant.id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fa fa-edit"></i> Manage
+                                </a>
+                                <button class="btn btn-sm btn-info" 
+                                        onclick="showNotes('{{ tenant.id }}', '{{ tenant.first_name }}')">
+                                    <i class="fa fa-sticky-note"></i> Notes
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Tenant Note</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('views.add_tenant_note') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Select Tenant</label>
+                        <select name="tenant_id" class="form-control" required>
+                            {% for tenant in tenants %}
+                            <option value="{{ tenant.id }}">{{ tenant.first_name }} ({{ tenant.unit_number or 'No unit' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea name="note" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Notes Modal -->
+<div class="modal fade" id="viewNotesModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tenant Notes</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="notesList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+function showNotes(tenantId, tenantName) {
+    // You'll need to implement this function to show all notes for a tenant
+    $('#viewNotesModal').modal('show');
+    document.getElementById('notesList').innerHTML = `<p>Loading notes for ${tenantName}...</p>`;
+    
+    fetch(`/admin/tenant-notes/${tenantId}`)
+        .then(response => response.json())
+        .then(notes => {
+            let html = `<h6>${tenantName}'s Notes</h6>`;
+            if (notes.length === 0) {
+                html += '<p class="text-muted">No notes available</p>';
+            } else {
+                html += '<ul class="list-group">';
+                notes.forEach(note => {
+                    html += `
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">${note.date}</small>
+                            </div>
+                            <p class="mb-0">${note.data}</p>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+            }
+            document.getElementById('notesList').innerHTML = html;
+        });
+}
+</script>
+{% endblock %} 
