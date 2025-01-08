@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Manage Tenant - {{ tenant.first_name }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>Tenant Details: {{ tenant.first_name }}</h4>
+                    <div>
+                        <button class="btn btn-warning" data-toggle="modal" data-target="#editTenantModal">
+                            <i class="fa fa-edit"></i> Edit Details
+                        </button>
+                        {% if tenant.is_active %}
+                        <button class="btn btn-danger" data-toggle="modal" data-target="#deactivateModal">
+                            Deactivate Account
+                        </button>
+                        {% else %}
+                        <form action="{{ url_for('views.activate_tenant', tenant_id=tenant.id) }}" method="POST" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success">
+                                Activate Account
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Personal Information</h5>
+                            <p><strong>Email:</strong> {{ tenant.email }}</p>
+                            <p><strong>Phone:</strong> {{ tenant.phone or 'Not provided' }}</p>
+                            <p><strong>Joined:</strong> {{ tenant.date_joined.strftime('%B %d, %Y') }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge badge-{{ 'success' if tenant.is_active else 'danger' }}">
+                                    {{ 'Active' if tenant.is_active else 'Inactive' }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Rental Information</h5>
+                            <p><strong>Unit:</strong> {{ tenant.unit_number or 'Not assigned' }}</p>
+                            <p><strong>Lease Start:</strong> {{ tenant.lease_start.strftime('%B %d, %Y') if tenant.lease_start else 'Not set' }}</p>
+                            <p><strong>Outstanding Balance:</strong> ₱{{ "%.2f"|format(tenant.get_outstanding_balance()) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Payment History</h5>
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#addPaymentModal">
+                        Add Payment
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Reference</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in tenant.payments|sort(attribute='date', reverse=true) %}
+                            <tr>
+                                <td>{{ payment.date.strftime('%Y-%m-%d') }}</td>
+                                <td>₱{{ "%.2f"|format(payment.amount) }}</td>
+                                <td>
+                                    <span class="badge badge-{{ 'success' if payment.status == 'paid' else 'warning' }}">
+                                        {{ payment.status }}
+                                    </span>
+                                </td>
+                                <td>{{ payment.reference }}</td>
+                                <td>
+                                    {% if payment.status == 'pending' %}
+                                    <form action="{{ url_for('views.approve_payment', payment_id=payment.id) }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            Approve
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <a href="{{ url_for('views.generate_receipt', payment_id=payment.id) }}" 
+                                       class="btn btn-sm btn-primary">Receipt</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Tenant Modal -->
+<div class="modal fade" id="editTenantModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Tenant Details</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('views.update_tenant', tenant_id=tenant.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Unit Number</label>
+                        <input type="text" name="unit_number" class="form-control" 
+                               value="{{ tenant.unit_number or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Lease Start Date</label>
+                        <input type="date" name="lease_start" class="form-control" 
+                               value="{{ tenant.lease_start.strftime('%Y-%m-%d') if tenant.lease_start else '' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Payment</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('views.add_payment', tenant_id=tenant.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" name="amount" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select name="method" class="form-control" required>
+                            <option value="cash">Cash</option>
+                            <option value="gcash">GCash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea name="notes" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Account Modal -->
+<div class="modal fade" id="deactivateModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Deactivate Account</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to deactivate this tenant's account? They will not be able to log in.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('views.deactivate_tenant', tenant_id=tenant.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Deactivate Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any additional JavaScript functionality here
+    const confirmDelete = document.querySelectorAll('.confirm-action');
+    confirmDelete.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to perform this action?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+      crossorigin="anonymous"
+    />
+    <style>
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 90px 0 0;
+            width: 240px;
+            background: #343a40;
+        }
+
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 90px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .sidebar .nav-link {
+            color: #fff;
+            padding: 15px 25px;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+
+        /* Main content styles */
+        .main-content {
+            margin-left: 240px;
+            padding: 90px 30px 30px;
+        }
+
+        /* Header styles */
+        .main-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 99;
+            background: #343a40;
+            padding: 15px 30px;
+            height: 70px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .main-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-left: 240px;
+        }
+
+        .user-nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-nav .btn {
+            margin-left: 15px;
+        }
+
+        /* Card styles */
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+        }
+
+        /* Badge styles */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+    </style>
+    <title>{% block title %}Home{% endblock %}</title>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-content">
+            <h1>AGUSTIN AND SONS REALTY MANAGEMENT</h1>
+            <div class="user-nav">
+                {% if user.is_authenticated %}
+                    <span class="text-light mr-3">Welcome, {{ user.first_name }}</span>
+                    {% if not user.is_admin() and user.unread_notifications_count() > 0 %}
+                        <span class="badge badge-danger">
+                            {{ user.unread_notifications_count() }} new notifications
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    {% if user.is_authenticated %}
+    <nav class="sidebar">
+        <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+                {% if user.is_admin() %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.admin_dashboard') }}">
+                            <i class="fa fa-dashboard"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.manage_tenants') }}">
+                            <i class="fa fa-users"></i> Tenants
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.manage_payments') }}">
+                            <i class="fa fa-money"></i> Payments
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.home') }}">
+                            <i class="fa fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.payments') }}">
+                            <i class="fa fa-credit-card"></i> Payments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('views.notifications') }}">
+                            <i class="fa fa-bell"></i> Notifications
+                        </a>
+                    </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('views.profile') }}">
+                        <i class="fa fa-user"></i> Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                        <i class="fa fa-sign-out"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    {% block javascript %}{% endblock %}
+  </body>
+</html>
