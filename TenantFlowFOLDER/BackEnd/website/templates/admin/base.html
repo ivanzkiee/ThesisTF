@@ -1,0 +1,55 @@
+<!-- In the sidebar navigation section -->
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('views.admin_complaints') }}">
+        <div class="d-flex align-items-center">
+            <div class="icon-circle bg-warning">
+                <i class="fas fa-comments text-white"></i>
+            </div>
+            <span class="ml-2">Complaints</span>
+            {% if g.complaint_stats and g.complaint_stats.pending > 0 %}
+            <span class="badge badge-danger badge-counter ml-2">
+                {{ g.complaint_stats.pending }}
+            </span>
+            {% endif %}
+        </div>
+    </a>
+</li>
+
+<!-- Add this to your <style> section or CSS file -->
+<style>
+.icon-circle {
+    height: 2rem;
+    width: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+}
+
+.nav-item .nav-link {
+    padding: 0.75rem 1rem;
+    display: block;
+    color: #4a5568;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.nav-item .nav-link:hover {
+    background-color: #f8f9fc;
+    color: #2d3748;
+}
+
+.nav-item .nav-link.active {
+    background-color: #edf2f7;
+    color: #2d3748;
+}
+
+.badge-counter {
+    position: absolute;
+    transform: scale(0.8);
+    transform-origin: top right;
+    right: 0.25rem;
+    margin-top: -0.25rem;
+}
+</style> 

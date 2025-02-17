@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Available Units{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Available Units</h2>
+
+    <div class="row">
+        {% for unit in units %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Unit {{ unit.unit_number }}</h5>
+                    <p class="card-text">
+                        <strong>Building:</strong> {{ unit.building }}<br>
+                        <strong>Floor:</strong> {{ unit.floor }}<br>
+                        <strong>Rent:</strong> {{ unit.rent_amount|format_currency }}/month
+                    </p>
+                    <button class="btn btn-primary" 
+                            onclick="showInterestModal('{{ unit.unit_number }}')">
+                        Express Interest
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Interest Modal -->
+<div class="modal fade" id="interestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Express Interest</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Would you like to express interest in Unit <span id="selectedUnit"></span>?</p>
+                <form id="interestForm">
+                    <div class="mb-3">
+                        <label class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" id="message" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitInterest()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showInterestModal(unitNumber) {
+    document.getElementById('selectedUnit').textContent = unitNumber;
+    new bootstrap.Modal(document.getElementById('interestModal')).show();
+}
+
+function submitInterest() {
+    const unitNumber = document.getElementById('selectedUnit').textContent;
+    const message = document.getElementById('message').value;
+    
+    fetch('/express-interest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            unit_number: unitNumber,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %} 

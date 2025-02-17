@@ -1,0 +1,100 @@
+{% macro render_floor_plan(units, is_admin=False) %}
+<div class="floor-plan-container mb-4">
+    <ul class="nav nav-tabs mb-4" id="buildingTabs" role="tablist">
+        {% for building in ['A', 'B', 'C', 'D', 'E'] %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %}" 
+                    id="building{{ building }}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#building{{ building }}" 
+                    type="button" 
+                    role="tab">
+                Building {{ building }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="buildingTabsContent">
+        {% for building in ['A', 'B', 'C', 'D', 'E'] %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+             id="building{{ building }}" 
+             role="tabpanel">
+            {% for floor in range(5, 0, -1) %}
+            <div class="floor mb-4">
+                <h5 class="floor-title">Floor {{ floor }}</h5>
+                <div class="row g-3">
+                    {% for unit in units %}
+                    {% if unit.building == 'Building ' ~ building and unit.floor == floor %}
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card unit-card h-100 {% if unit.status == 'occupied' %}bg-light-success{% elif unit.status == 'maintenance' %}bg-light-warning{% else %}bg-light-primary{% endif %}">
+                            <div class="card-body">
+                                <h5 class="card-title">Unit {{ unit.unit_number }}</h5>
+                                <p class="card-text">Status: {{ unit.status|title }}</p>
+                                <p class="card-text">Rent: {{ unit.rent_amount|format_currency }}/month</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.floor-plan-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.floor {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+}
+
+.floor-title {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.unit-card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.unit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.bg-light-success {
+    background-color: #e8f5e9 !important;
+}
+
+.bg-light-warning {
+    background-color: #fff3e0 !important;
+}
+
+.bg-light-primary {
+    background-color: #e3f2fd !important;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #007bff;
+    font-weight: bold;
+}
+</style>
+{% endmacro %} 

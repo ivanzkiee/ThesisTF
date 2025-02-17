@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% from "components/unit_availability.html" import render_floor_plan %}
+{% block title %}Tenant Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .stats-card {
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4 class="card-title">Welcome, {{ current_user.first_name }}!</h4>
+            <p class="card-text">Unit Number: {{ current_user.unit_number }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Stats -->
+        <div class="col-md-4 mb-4">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Payment Status</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Current Balance:</span>
+                        <span class="h4 mb-0">{{ current_user.balance|format_currency }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('views.make_payment') }}" class="btn btn-primary btn-sm">Make Payment</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Maintenance Requests</h5>
+                    <p class="mb-0">Active Requests: {{ maintenance_requests|length }}</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('views.maintenance_dashboard') }}" class="btn btn-primary btn-sm">View Requests</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Notifications</h5>
+                    <p class="mb-0">Unread: {{ notifications|length }}</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <button class="btn btn-primary btn-sm" onclick="markAllRead()">Mark All Read</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <!-- Recent Payments -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Payments</h5>
+                </div>
+                <div class="card-body">
+                    {% if payments %}
+                    <div class="list-group list-group-flush">
+                        {% for payment in payments[:5] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ payment.amount|format_currency }}</h6>
+                                    <small class="text-muted">{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else 'Pending' }}</small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if payment.status == 'paid' else 'warning' if payment.status == 'pending' else 'danger' }}">
+                                    {{ payment.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No recent payments</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Maintenance Requests -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Maintenance Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if maintenance_requests %}
+                    <div class="list-group list-group-flush">
+                        {% for request in maintenance_requests %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ request.category }}</h6>
+                                    <small class="text-muted">{{ request.created_date.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <span class="badge bg-{{ 'success' if request.status == 'completed' else 'warning' if request.status == 'in_progress' else 'info' }}">
+                                    {{ request.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No maintenance requests</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unit Availability Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Unit Availability</h6>
+                </div>
+                <div class="card-body">
+                    {{ render_floor_plan(units, is_admin=False) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markAllRead() {
+    fetch('/mark-all-notifications-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %} 

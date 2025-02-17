@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Tenant Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Tenant Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ tenant.first_name }} {{ tenant.last_name }}</p>
+                    <p><strong>Email:</strong> {{ tenant.email }}</p>
+                    <p><strong>Phone:</strong> {{ tenant.phone }}</p>
+                    <p><strong>Unit:</strong> {{ tenant.unit_number }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Move-in Date:</strong> {{ tenant.created_date.strftime('%Y-%m-%d') }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-{{ 'success' if tenant.is_active else 'danger' }}">
+                            {{ 'Active' if tenant.is_active else 'Inactive' }}
+                        </span>
+                    </p>
+                    <p><strong>Balance:</strong> {{ tenant.balance|format_currency }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Payment History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else 'Pending' }}</td>
+                            <td>{{ payment.amount|format_currency }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if payment.status == 'paid' else 'warning' }}">
+                                    {{ payment.status }}
+                                </span>
+                            </td>
+                            <td>{{ payment.payment_method }}</td>
+                            <td>{{ payment.reference_number or '-' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewPayment('{{ payment.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance History -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Maintenance History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Issue</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in maintenance_requests %}
+                        <tr>
+                            <td>{{ request.created_date.strftime('%Y-%m-d') }}</td>
+                            <td>{{ request.description }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if request.priority == 'high' else 'warning' if request.priority == 'medium' else 'info' }}">
+                                    {{ request.priority }}
+                                </span>
+                            </td>
+                            <td>{{ request.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

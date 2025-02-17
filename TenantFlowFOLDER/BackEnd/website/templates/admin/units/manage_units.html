@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Manage Units{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Unit Management</h2>
+        <a href="{{ url_for('unit_management.add_unit') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Unit
+        </a>
+    </div>
+
+    <!-- Unit Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Occupied Units</h5>
+                    <h2 id="occupied-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Vacant Units</h5>
+                    <h2 id="vacant-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Under Maintenance</h5>
+                    <h2 id="maintenance-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Units</h5>
+                    <h2 id="total-count">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Units Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Unit Number</th>
+                            <th>Building</th>
+                            <th>Floor</th>
+                            <th>Status</th>
+                            <th>Current Tenant</th>
+                            <th>Rent Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for unit in units %}
+                        <tr>
+                            <td>{{ unit.unit_number }}</td>
+                            <td>{{ unit.building }}</td>
+                            <td>{{ unit.floor }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if unit.status == 'occupied' 
+                                                        else 'info' if unit.status == 'vacant' 
+                                                        else 'warning' }}">
+                                    {{ unit.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if unit.tenant %}
+                                    {{ unit.tenant.first_name }} {{ unit.tenant.last_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ unit.rent_amount|format_currency }}</td>
+                            <td>
+                                <a href="{{ url_for('unit_management.unit_details', unit_number=unit.unit_number) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateUnitCounts() {
+    fetch('/api/units/status')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('occupied-count').textContent = data.occupied;
+            document.getElementById('vacant-count').textContent = data.vacant;
+            document.getElementById('maintenance-count').textContent = data.maintenance;
+            document.getElementById('total-count').textContent = data.total;
+        });
+}
+
+// Update counts every 30 seconds
+setInterval(updateUnitCounts, 30000);
+updateUnitCounts();
+</script>
+{% endblock %} 

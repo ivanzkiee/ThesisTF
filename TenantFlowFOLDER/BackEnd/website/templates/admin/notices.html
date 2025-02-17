@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}Notices & Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Notices & Notifications</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createNoticeModal">
+            <i class="fas fa-plus"></i> Create New Notice
+        </button>
+    </div>
+
+    <!-- Notice Categories -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Payment Reminders</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="paymentRemindersCount">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Maintenance Alerts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="maintenanceAlertsCount">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tools fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                General Announcements</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="announcementsCount">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bullhorn fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Urgent Updates</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="urgentUpdatesCount">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notices Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Notices</h6>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary active" onclick="filterNotices('all')">All</button>
+                <button class="btn btn-sm btn-outline-warning" onclick="filterNotices('payment')">Payment</button>
+                <button class="btn btn-sm btn-outline-info" onclick="filterNotices('maintenance')">Maintenance</button>
+                <button class="btn btn-sm btn-outline-success" onclick="filterNotices('announcement')">Announcements</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="filterNotices('urgent')">Urgent</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table" id="noticesTable">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Recipients</th>
+                            <th>Sent Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notice in notices %}
+                        <tr data-type="{{ notice.type }}">
+                            <td>
+                                <span class="badge bg-{{ 'warning' if notice.type == 'payment' 
+                                                    else 'info' if notice.type == 'maintenance'
+                                                    else 'success' if notice.type == 'announcement'
+                                                    else 'danger' }}">
+                                    {{ notice.type|title }}
+                                </span>
+                            </td>
+                            <td>{{ notice.title }}</td>
+                            <td>{{ notice.recipients }}</td>
+                            <td>{{ notice.sent_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if notice.status == 'sent' 
+                                                    else 'warning' if notice.status == 'pending'
+                                                    else 'danger' }}">
+                                    {{ notice.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewNotice('{{ notice.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editNotice('{{ notice.id }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteNotice('{{ notice.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Notice Modal -->
+<div class="modal fade" id="createNoticeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Notice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="noticeForm">
+                    <div class="mb-3">
+                        <label class="form-label">Notice Type</label>
+                        <select class="form-select" id="noticeType" required>
+                            <option value="payment">Payment Reminder</option>
+                            <option value="maintenance">Maintenance Alert</option>
+                            <option value="announcement">General Announcement</option>
+                            <option value="urgent">Urgent Update</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="noticeTitle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-control" id="noticeMessage" rows="4" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Recipients</label>
+                        <select class="form-select" id="recipientType" onchange="toggleRecipientSelection()">
+                            <option value="all_tenants">All Tenants</option>
+                            <option value="overdue_tenants">Overdue Tenants</option>
+                            <option value="specific_tenants">Specific Tenants</option>
+                            <option value="maintenance_staff">Maintenance Staff</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="specificTenantsContainer" style="display: none;">
+                        <label class="form-label">Select Tenants</label>
+                        <div class="tenant-list" style="max-height: 200px; overflow-y: auto;">
+                            {% for tenant in tenants %}
+                            <div class="form-check">
+                                <input class="form-check-input tenant-checkbox" 
+                                       type="checkbox" 
+                                       value="{{ tenant.id }}" 
+                                       id="tenant{{ tenant.id }}">
+                                <label class="form-check-label" for="tenant{{ tenant.id }}">
+                                    {{ tenant.first_name }} {{ tenant.last_name }} 
+                                    (Unit {{ tenant.unit_number }})
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notification Methods</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailNotification" checked>
+                            <label class="form-check-label">Email</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="smsNotification">
+                            <label class="form-check-label">SMS</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="pushNotification">
+                            <label class="form-check-label">Push Notification</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Schedule</label>
+                        <select class="form-select" id="noticeSchedule">
+                            <option value="send_now">Send Now</option>
+                            <option value="schedule">Schedule for Later</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="scheduleDateContainer" style="display: none;">
+                        <label class="form-label">Schedule Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="scheduleDateTime">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitNotice()">Send Notice</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Notice Modal -->
+<div class="modal fade" id="viewNoticeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">View Notice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="fw-bold">Notice Type:</label>
+                    <p id="viewNoticeType"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Title:</label>
+                    <p id="viewNoticeTitle"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Message:</label>
+                    <p id="viewNoticeMessage"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Recipients:</label>
+                    <p id="viewNoticeRecipients"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Notification Methods:</label>
+                    <p id="viewNoticeMethods"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Status:</label>
+                    <p id="viewNoticeStatus"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Notice Modal -->
+<div class="modal fade" id="editNoticeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Notice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editNoticeForm">
+                    <input type="hidden" id="editNoticeId">
+                    <div class="mb-3">
+                        <label class="form-label">Notice Type</label>
+                        <select class="form-select" id="editNoticeType" required>
+                            <option value="payment">Payment Reminder</option>
+                            <option value="maintenance">Maintenance Alert</option>
+                            <option value="announcement">General Announcement</option>
+                            <option value="urgent">Urgent Update</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editNoticeTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-control" id="editNoticeMessage" rows="4" required></textarea>
+                    </div>
+                    <!-- Add other fields similar to create notice form -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateNotice()">Update Notice</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tenant-list {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.tenant-list .form-check {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.tenant-list .form-check:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterNotices(type) {
+    const rows = document.querySelectorAll('#noticesTable tbody tr');
+    rows.forEach(row => {
+        if (type === 'all' || row.dataset.type === type) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+document.getElementById('noticeSchedule').addEventListener('change', function() {
+    const scheduleDateContainer = document.getElementById('scheduleDateContainer');
+    scheduleDateContainer.style.display = this.value === 'schedule' ? 'block' : 'none';
+});
+
+function toggleRecipientSelection() {
+    const recipientType = document.getElementById('recipientType').value;
+    const specificTenantsContainer = document.getElementById('specificTenantsContainer');
+    specificTenantsContainer.style.display = recipientType === 'specific_tenants' ? 'block' : 'none';
+}
+
+function submitNotice() {
+    const formData = {
+        type: document.getElementById('noticeType').value,
+        title: document.getElementById('noticeTitle').value,
+        message: document.getElementById('noticeMessage').value,
+        recipient_type: document.getElementById('recipientType').value,
+        recipients: getSelectedRecipients(),
+        notification_methods: {
+            email: document.getElementById('emailNotification').checked,
+            sms: document.getElementById('smsNotification').checked,
+            push: document.getElementById('pushNotification').checked
+        },
+        schedule: document.getElementById('noticeSchedule').value,
+        schedule_datetime: document.getElementById('scheduleDateTime').value
+    };
+
+    fetch('/admin/notices/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error creating notice: ' + data.error);
+        }
+    });
+}
+
+function getSelectedRecipients() {
+    const recipientType = document.getElementById('recipientType').value;
+    if (recipientType === 'specific_tenants') {
+        return Array.from(document.querySelectorAll('.tenant-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+    }
+    return [recipientType];
+}
+
+function viewNotice(noticeId) {
+    fetch(`/admin/notices/${noticeId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('viewNoticeType').textContent = data.type;
+            document.getElementById('viewNoticeTitle').textContent = data.title;
+            document.getElementById('viewNoticeMessage').textContent = data.message;
+            document.getElementById('viewNoticeRecipients').textContent = data.recipients;
+            document.getElementById('viewNoticeMethods').textContent = data.notification_methods;
+            document.getElementById('viewNoticeStatus').textContent = data.status;
+            
+            new bootstrap.Modal(document.getElementById('viewNoticeModal')).show();
+        });
+}
+
+function editNotice(noticeId) {
+    fetch(`/admin/notices/${noticeId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('editNoticeId').value = noticeId;
+            document.getElementById('editNoticeType').value = data.type;
+            document.getElementById('editNoticeTitle').value = data.title;
+            document.getElementById('editNoticeMessage').value = data.message;
+            
+            new bootstrap.Modal(document.getElementById('editNoticeModal')).show();
+        });
+}
+
+function updateNotice() {
+    const noticeId = document.getElementById('editNoticeId').value;
+    const formData = {
+        type: document.getElementById('editNoticeType').value,
+        title: document.getElementById('editNoticeTitle').value,
+        message: document.getElementById('editNoticeMessage').value
+    };
+
+    fetch(`/admin/notices/${noticeId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error updating notice: ' + data.error);
+        }
+    });
+}
+
+function deleteNotice(noticeId) {
+    if (confirm('Are you sure you want to delete this notice?')) {
+        fetch(`/admin/notices/${noticeId}/delete`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

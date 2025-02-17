@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Requests{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Maintenance Requests</h2>
+    
+    <!-- Pending Requests -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Pending Requests</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Unit</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in pending_requests %}
+                        <tr>
+                            <td>{{ request.created_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ request.requester.unit_number }}</td>
+                            <td>{{ request.category|title }}</td>
+                            <td>{{ request.description }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if request.priority == 'high' else 'warning' if request.priority == 'medium' else 'success' }}">
+                                    {{ request.priority|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('views.view_maintenance_request', request_id=request.id) }}" 
+                                   class="btn btn-sm btn-primary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- In Progress Requests -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">In Progress</h5>
+        </div>
+        <div class="card-body">
+            <!-- Similar table structure as above -->
+        </div>
+    </div>
+
+    <!-- Completed Requests -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Completed</h5>
+        </div>
+        <div class="card-body">
+            <!-- Similar table structure as above -->
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sidebar">
+    <!-- Other sidebar items -->
+    
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('views.submit_complaint') }}">
+            <i class="fas fa-comment-alt"></i>
+            <span>Submit Complaint</span>
+        </a>
+    </li>
+    
+    <!-- Other sidebar items -->
+</div>
+
+<!-- Rest of your base template -->
+{% endblock %} 

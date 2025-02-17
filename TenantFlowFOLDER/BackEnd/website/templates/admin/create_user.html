@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Create User{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Create New User</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <!-- User Type Selection -->
+                <h5 class="mb-3">User Type</h5>
+                <div class="mb-3">
+                    <select class="form-select" id="user_type" name="user_type" required onchange="toggleUnitSelection()">
+                        <option value="">Select User Type</option>
+                        <option value="tenant">Tenant</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- Personal Information -->
+                <h5 class="mb-3 mt-4">Personal Information</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <input type="text" class="form-control" id="address" name="address" required>
+                </div>
+
+                <!-- Emergency Contact -->
+                <h5 class="mb-3 mt-4">Emergency Contact</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="emergency_contact_name" class="form-label">Contact Name</label>
+                        <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="emergency_contact_phone" class="form-label">Contact Phone</label>
+                        <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone" required>
+                    </div>
+                </div>
+
+                <!-- Unit Selection (for tenants only) -->
+                <div id="unitSelectionSection" style="display: none;">
+                    <h5 class="mb-3 mt-4">Unit Assignment</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="building" class="form-label">Building</label>
+                            <select class="form-select" id="building" name="building" onchange="updateUnitOptions()">
+                                <option value="">Select Building</option>
+                                {% for building in ['A', 'B', 'C', 'D', 'E'] %}
+                                <option value="{{ building }}">Building {{ building }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unit_number" class="form-label">Unit Number</label>
+                            <select class="form-select" id="unit_number" name="unit_number">
+                                <option value="">Select Building First</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <h5 class="mb-3 mt-4">Account Security</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="password1" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password1" name="password1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="password2" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="password2" name="password2" required>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary me-2" onclick="window.history.back()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add this hidden div to store the units data -->
+<div id="available-units-data" 
+     data-units='{{ available_units|tojson|safe }}'
+     style="display: none;">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleUnitSelection() {
+    const userType = document.getElementById('user_type').value;
+    const unitSection = document.getElementById('unitSelectionSection');
+    const unitSelect = document.getElementById('unit_number');
+    const buildingSelect = document.getElementById('building');
+    
+    if (userType === 'tenant') {
+        unitSection.style.display = 'block';
+        unitSelect.required = true;
+        buildingSelect.required = true;
+    } else {
+        unitSection.style.display = 'none';
+        unitSelect.required = false;
+        buildingSelect.required = false;
+    }
+}
+
+function updateUnitOptions() {
+    const building = document.getElementById('building').value;
+    const unitSelect = document.getElementById('unit_number');
+    const availableUnitsData = document.getElementById('available-units-data');
+    const availableUnits = JSON.parse(availableUnitsData.dataset.units);
+    
+    // Clear current options
+    unitSelect.innerHTML = '<option value="">Select Unit</option>';
+    
+    if (building) {
+        // Filter units for selected building
+        const buildingUnits = availableUnits.filter(unit => unit.unit_number.startsWith(building));
+        
+        // Add options for available units
+        buildingUnits.forEach(unit => {
+            const option = document.createElement('option');
+            option.value = unit.unit_number;
+            const rentAmount = new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            }).format(unit.rent_amount);
+            option.textContent = `Unit ${unit.unit_number} - Floor ${unit.floor} (${rentAmount}/month)`;
+            unitSelect.appendChild(option);
+        });
+    }
+}
+</script>
+{% endblock %} 

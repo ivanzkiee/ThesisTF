@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Unit Information{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Current Unit Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Your Unit Information</h6>
+                </div>
+                <div class="card-body">
+                    {% if unit %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Unit Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Unit Number:</th>
+                                    <td>{{ unit.unit_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Floor:</th>
+                                    <td>{{ unit.floor }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Building:</th>
+                                    <td>{{ unit.building }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Monthly Rent:</th>
+                                    <td>{{ unit.rent_amount|format_currency }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge bg-success">Occupied</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Lease Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Move-in Date:</th>
+                                    <td>{{ current_user.created_date.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Current Balance:</th>
+                                    <td>{{ current_user.balance|format_currency }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Payment:</th>
+                                    <td>
+                                        {% if last_payment %}
+                                            {{ last_payment.amount|format_currency }} 
+                                            ({{ last_payment.payment_date.strftime('%Y-%m-%d') }})
+                                        {% else %}
+                                            No payments recorded
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">No unit information available.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this section after the unit information -->
+    {% if maintenance_history %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Maintenance History</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Issue</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in maintenance_history %}
+                                <tr>
+                                    <td>{{ request.created_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ request.description }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if request.priority == 'high' else 'warning' if request.priority == 'medium' else 'info' }}">
+                                            {{ request.priority|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if request.status == 'completed' else 'warning' if request.status == 'in_progress' else 'info' }}">
+                                            {{ request.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Units -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Available Units</h6>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="filterUnits('all')">All Units</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="filterUnits('vacant')">Vacant</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for unit in available_units %}
+                        <div class="col-md-4 mb-3" data-status="{{ unit.status }}">
+                            <div class="card unit-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Unit {{ unit.unit_number }}</h5>
+                                    <p class="mb-1"><strong>Floor:</strong> {{ unit.floor }}</p>
+                                    <p class="mb-1"><strong>Building:</strong> {{ unit.building }}</p>
+                                    <p class="mb-1"><strong>Rent:</strong> {{ unit.rent_amount|format_currency }}/month</p>
+                                    <p class="mb-0">
+                                        <span class="badge bg-{{ 'success' if unit.status == 'vacant' else 'warning' }}">
+                                            {{ unit.status|title }}
+                                        </span>
+                                    </p>
+                                </div>
+                                {% if unit.status == 'vacant' %}
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-sm btn-primary" onclick="showInterestForm('{{ unit.unit_number }}')">
+                                        Express Interest
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interest Modal -->
+<div class="modal fade" id="interestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Express Interest</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="interestForm">
+                    <input type="hidden" id="unitNumber" name="unitNumber">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message to Admin</label>
+                        <textarea class="form-control" id="message" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitInterest()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterUnits(status) {
+    const units = document.querySelectorAll('[data-status]');
+    units.forEach(unit => {
+        if (status === 'all' || unit.dataset.status === status) {
+            unit.style.display = '';
+        } else {
+            unit.style.display = 'none';
+        }
+    });
+}
+
+function showInterestForm(unitNumber) {
+    document.getElementById('unitNumber').value = unitNumber;
+    new bootstrap.Modal(document.getElementById('interestModal')).show();
+}
+
+function submitInterest() {
+    const unitNumber = document.getElementById('unitNumber').value;
+    const message = document.getElementById('message').value;
+    
+    fetch('/tenant/express-interest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            unit_number: unitNumber,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Your interest has been submitted to the admin.');
+            bootstrap.Modal.getInstance(document.getElementById('interestModal')).hide();
+        }
+    });
+}
+</script>
+
+<style>
+.unit-card {
+    transition: transform 0.2s;
+}
+
+.unit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %} 

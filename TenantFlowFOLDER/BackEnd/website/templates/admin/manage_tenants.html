@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}Manage Tenants{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Tabs for different sections -->
+    <ul class="nav nav-tabs mb-4" id="tenantTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview">Overview</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="payments-tab" data-bs-toggle="tab" href="#payments">Payments</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="units-tab" data-bs-toggle="tab" href="#units">Unit Availability</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Tenant Management</h2>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Add New Tenant
+                </a>
+            </div>
+
+            <!-- Unit Availability Overview -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Unit Availability</h6>
+                            <div class="btn-group">
+                                {% for building in buildings %}
+                                <button class="btn btn-sm btn-outline-primary" onclick="showBuilding('{{ building }}')">
+                                    Building {{ building }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% for building in buildings %}
+                            <div class="building-section" id="building{{ building }}" style="display: {% if loop.first %}block{% else %}none{% endif %}">
+                                <h5 class="mb-3">Building {{ building }}</h5>
+                                {% for floor in range(5, 0, -1) %}
+                                <div class="floor-section mb-4">
+                                    <h6 class="mb-3">Floor {{ floor }}</h6>
+                                    <div class="row">
+                                        {% for unit in organized_units[building][floor] %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="unit-card {{ unit.status }}" onclick="showUnitDetails('{{ unit.unit_number }}')">
+                                                <h5>Unit {{ unit.unit_number }}</h5>
+                                                <p class="status">Status: {{ unit.status|title }}</p>
+                                                {% if unit.current_tenant_id %}
+                                                    {% set current_tenant = tenants|selectattr('id', 'equalto', unit.current_tenant_id)|first|default(none) %}
+                                                    {% if current_tenant %}
+                                                        <p class="tenant">Tenant: {{ current_tenant.first_name }} {{ current_tenant.last_name }}</p>
+                                                    {% else %}
+                                                        <p class="tenant text-muted">No tenant found</p>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <p class="tenant text-muted">No tenant assigned</p>
+                                                {% endif %}
+                                                <p class="rent">Rent: {{ unit.rent_amount|format_currency }}/month</p>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tenants List -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Manage Tenants</h6>
+                    <a href="{{ url_for('views.create_user') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add New User
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Unit</th>
+                                    <th>Contact</th>
+                                    <th>Move-in Date</th>
+                                    <th>Status</th>
+                                    <th>Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tenant in tenants %}
+                                <tr>
+                                    <td>{{ tenant.first_name }} {{ tenant.last_name }}</td>
+                                    <td>{{ tenant.unit_number }}</td>
+                                    <td>
+                                        {{ tenant.phone }}<br>
+                                        <small class="text-muted">{{ tenant.email }}</small>
+                                    </td>
+                                    <td>{{ tenant.created_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if tenant.is_active else 'danger' }}">
+                                            {{ 'Active' if tenant.is_active else 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ tenant.balance|format_currency }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-info" onclick="viewTenantDetails('{{tenant.id}}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-warning" onclick="editTenant('{{tenant.id}}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Tab -->
+        <div class="tab-pane fade" id="payments">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Records</h6>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="filterPayments('all')">All</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="filterPayments('paid')">Paid</button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="filterPayments('pending')">Pending</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="filterPayments('overdue')">Overdue</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Unit</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Reference</th>
+                                    <th>Submitted Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr data-status="{{ payment.status }}">
+                                    <td>{{ payment.tenant.first_name }} {{ payment.tenant.last_name }}</td>
+                                    <td>{{ payment.tenant.unit_number }}</td>
+                                    <td>{{ payment.amount|format_currency }}</td>
+                                    <td>{{ payment.payment_method }}</td>
+                                    <td>{{ payment.reference_number or '-' }}</td>
+                                    <td>{{ payment.created_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.status == 'paid' 
+                                                    else 'warning' if payment.status == 'pending'
+                                                    else 'danger' }}">
+                                            {{ payment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-info" onclick="viewPayment('{{payment.id}}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if payment.status == 'pending' %}
+                                            <button class="btn btn-sm btn-success" onclick="approvePayment('{{payment.id}}')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Units Tab -->
+        <div class="tab-pane fade" id="units">
+            <!-- Your existing unit availability code here -->
+        </div>
+    </div>
+</div>
+
+<!-- Unit Details Modal -->
+<div class="modal fade" id="unitDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Unit Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="unitDetailsContent">
+                Loading...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="assignTenant()">Assign Tenant</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="paymentDetails">
+                Loading...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="approvePaymentBtn" style="display: none;">
+                    Approve Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showBuilding(building) {
+    document.querySelectorAll('.building-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    document.getElementById('building' + building).style.display = 'block';
+}
+
+function showUnitDetails(unitNumber) {
+    fetch(`/admin/unit/${unitNumber}/details`)
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('unitDetailsContent');
+            content.innerHTML = `
+                <p><strong>Unit Number:</strong> ${data.unit_number}</p>
+                <p><strong>Status:</strong> ${data.status}</p>
+                <p><strong>Floor:</strong> ${data.floor}</p>
+                <p><strong>Rent:</strong> ${data.rent_amount}</p>
+                ${data.tenant ? `
+                    <p><strong>Current Tenant:</strong> ${data.tenant.name}</p>
+                    <p><strong>Contact:</strong> ${data.tenant.phone}</p>
+                    <p><strong>Move-in Date:</strong> ${data.tenant.move_in_date}</p>
+                ` : '<p class="text-muted">No tenant currently assigned</p>'}
+            `;
+            new bootstrap.Modal(document.getElementById('unitDetailsModal')).show();
+        });
+}
+
+function viewTenantDetails(tenantId) {
+    window.location.href = `/admin/tenant/${tenantId}`;
+}
+
+function editTenant(tenantId) {
+    window.location.href = `/admin/tenant/${tenantId}`;
+}
+
+function filterPayments(status) {
+    const rows = document.querySelectorAll('#paymentsTable tbody tr');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewPayment(paymentId) {
+    fetch(`/admin/payment/${paymentId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('paymentDetails');
+            content.innerHTML = `
+                <p><strong>Tenant:</strong> ${data.tenant_name}</p>
+                <p><strong>Unit:</strong> ${data.unit_number}</p>
+                <p><strong>Amount:</strong> ${data.amount}</p>
+                <p><strong>Payment Date:</strong> ${data.payment_date || '-'}</p>
+                <p><strong>Status:</strong> ${data.status}</p>
+                <p><strong>Payment Method:</strong> ${data.payment_method}</p>
+                ${data.reference_number ? `<p><strong>Reference Number:</strong> ${data.reference_number}</p>` : ''}
+                ${data.proof_of_payment ? `
+                    <div class="mt-3">
+                        <strong>Proof of Payment:</strong><br>
+                        <img src="/static/uploads/payments/${data.proof_of_payment}" class="img-fluid mt-2">
+                    </div>
+                ` : ''}
+            `;
+            
+            // Show approve button only for pending payments
+            const approveBtn = document.getElementById('approvePaymentBtn');
+            approveBtn.style.display = data.status === 'pending' ? 'block' : 'none';
+            approveBtn.onclick = () => approvePayment(paymentId);
+            
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
+        });
+}
+
+function approvePayment(paymentId) {
+    if (confirm('Are you sure you want to approve this payment?')) {
+        fetch(`/admin/payment/${paymentId}/approve`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+
+<style>
+.unit-card {
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.unit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.unit-card.occupied {
+    background-color: #e8f5e9;
+    border: 2px solid #4caf50;
+}
+
+.unit-card.vacant {
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
+}
+
+.unit-card.maintenance {
+    background-color: #fff3e0;
+    border: 2px solid #ff9800;
+}
+
+.floor-plan {
+    min-height: 400px;
+}
+</style>
+{% endblock %} 

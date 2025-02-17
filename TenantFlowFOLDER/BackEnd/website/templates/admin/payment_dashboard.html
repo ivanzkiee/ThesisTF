@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Payment Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Statistics Cards -->
+    <div class="row">
+        <!-- Monthly Collections -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Monthly Collections</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ monthly_collections|format_currency }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Rate -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Collection Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ collection_rate }}%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Payments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Payments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ pending_payments|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Payments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Overdue Payments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ overdue_payments|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Trend Chart -->
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Trends</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="paymentTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Lists -->
+    <div class="row">
+        <!-- All Payments -->
+        <div class="col-xl-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">All Payments</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Payment Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in all_payments %}
+                                <tr>
+                                    <td>{{ payment.tenant.first_name }} {{ payment.tenant.last_name }}</td>
+                                    <td>{{ payment.amount|format_currency }}</td>
+                                    <td>{{ payment.due_date.strftime('%Y-%m-%d') if payment.due_date else '-' }}</td>
+                                    <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.status == 'paid' 
+                                                            else 'warning' if payment.status == 'pending'
+                                                            else 'danger' }}">
+                                            {{ payment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewPayment({{ payment.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if payment.status != 'paid' %}
+                                        <button class="btn btn-sm btn-success" onclick="approvePayment({{ payment.id }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="paymentDetails">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="approvePaymentBtn">Approve Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Payment Trend Chart
+var ctx = document.getElementById('paymentTrendChart').getContext('2d');
+var paymentTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ payment_months|tojson }},
+        datasets: [{
+            label: 'Monthly Payments',
+            data: {{ payment_trends|tojson }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+function viewPayment(paymentId) {
+    fetch(`/admin/payment/${paymentId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('paymentDetails');
+            content.innerHTML = `
+                <p><strong>Tenant:</strong> ${data.tenant_name}</p>
+                <p><strong>Unit:</strong> ${data.unit_number}</p>
+                <p><strong>Amount:</strong> ${data.amount}</p>
+                <p><strong>Payment Date:</strong> ${data.payment_date || 'Pending'}</p>
+                <p><strong>Status:</strong> ${data.status}</p>
+                <p><strong>Payment Method:</strong> ${data.payment_method}</p>
+                ${data.reference_number ? `<p><strong>Reference Number:</strong> ${data.reference_number}</p>` : ''}
+                ${data.proof_of_payment ? `
+                    <div class="mt-3">
+                        <strong>Proof of Payment:</strong><br>
+                        <img src="/static/uploads/payments/${data.proof_of_payment}" class="img-fluid mt-2">
+                    </div>
+                ` : ''}
+            `;
+            
+            const approveBtn = document.getElementById('approvePaymentBtn');
+            approveBtn.style.display = data.status === 'pending' ? 'block' : 'none';
+            approveBtn.onclick = () => approvePayment(paymentId);
+            
+            new bootstrap.Modal(document.getElementById('paymentModal')).show();
+        });
+}
+
+function approvePayment(paymentId) {
+    if (confirm('Are you sure you want to approve this payment?')) {
+        fetch(`/admin/payment/${paymentId}/approve`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error approving payment: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

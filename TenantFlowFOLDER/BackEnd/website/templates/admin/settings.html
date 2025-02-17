@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Settings Navigation -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card settings-card mb-4">
+                <div class="card-body">
+                    <div class="nav flex-column nav-pills settings-nav" id="settings-tab" role="tablist">
+                        <button class="nav-link active d-flex align-items-center mb-2" data-bs-toggle="pill" data-bs-target="#profile-settings">
+                            <i class="fas fa-user-circle"></i>
+                            <div class="settings-text">
+                                <div class="fw-bold">Profile Settings</div>
+                                <small class="text-muted">Update your personal information</small>
+                            </div>
+                        </button>
+                        <button class="nav-link d-flex align-items-center mb-2" data-bs-toggle="pill" data-bs-target="#system-settings">
+                            <i class="fas fa-cogs"></i>
+                            <div class="settings-text">
+                                <div class="fw-bold">System Settings</div>
+                                <small class="text-muted">Configure system-wide preferences</small>
+                            </div>
+                        </button>
+                        <button class="nav-link d-flex align-items-center mb-2" data-bs-toggle="pill" data-bs-target="#notification-settings">
+                            <i class="fas fa-bell"></i>
+                            <div class="settings-text">
+                                <div class="fw-bold">Notification Settings</div>
+                                <small class="text-muted">Manage alerts and reminders</small>
+                            </div>
+                        </button>
+                        <button class="nav-link d-flex align-items-center mb-2" data-bs-toggle="pill" data-bs-target="#payment-settings">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <div class="settings-text">
+                                <div class="fw-bold">Payment Settings</div>
+                                <small class="text-muted">Configure payment methods and fees</small>
+                            </div>
+                        </button>
+                        <button class="nav-link d-flex align-items-center mb-2" data-bs-toggle="pill" data-bs-target="#backup-settings">
+                            <i class="fas fa-shield-alt"></i>
+                            <div class="settings-text">
+                                <div class="fw-bold">Backup & Security</div>
+                                <small class="text-muted">Manage backups and security settings</small>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Profile Settings -->
+                <div class="tab-pane fade show active" id="profile-settings">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Profile Settings</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="profileForm" onsubmit="updateProfile(event)">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">First Name</label>
+                                        <input type="text" class="form-control" name="first_name" 
+                                               value="{{ current_user.first_name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" name="last_name" 
+                                               value="{{ current_user.last_name }}" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" 
+                                           value="{{ current_user.email }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" name="phone" 
+                                           value="{{ current_user.phone }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Change Password</label>
+                                    <input type="password" class="form-control" name="new_password" 
+                                           placeholder="Leave blank to keep current password">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Settings -->
+                <div class="tab-pane fade" id="system-settings">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Settings</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="systemSettingsForm" onsubmit="updateSystemSettings(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Property Name</label>
+                                    <input type="text" class="form-control" name="property_name" 
+                                           value="{{ settings.property_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Business Address</label>
+                                    <input type="text" class="form-control" name="business_address" 
+                                           value="{{ settings.business_address }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Email</label>
+                                    <input type="email" class="form-control" name="contact_email" 
+                                           value="{{ settings.contact_email }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Phone</label>
+                                    <input type="tel" class="form-control" name="contact_phone" 
+                                           value="{{ settings.contact_phone }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Currency Symbol</label>
+                                    <input type="text" class="form-control" name="currency_symbol" 
+                                           value="{{ settings.currency_symbol }}" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="tab-pane fade" id="notification-settings">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Notification Settings</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="notificationSettingsForm" onsubmit="updateNotificationSettings(event)">
+                                <div class="mb-3">
+                                    <h6>Payment Reminders</h6>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="payment_reminder_email" 
+                                               {{ 'checked' if settings.payment_reminder_email }}>
+                                        <label class="form-check-label">Send Email Reminders</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="payment_reminder_sms" 
+                                               {{ 'checked' if settings.payment_reminder_sms }}>
+                                        <label class="form-check-label">Send SMS Reminders</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Days Before Due Date to Send Reminder</label>
+                                    <input type="number" class="form-control" name="reminder_days" 
+                                           value="{{ settings.reminder_days }}" min="1" max="30">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Settings -->
+                <div class="tab-pane fade" id="payment-settings">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Payment Settings</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="paymentSettingsForm" onsubmit="updatePaymentSettings(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Late Payment Fee (%)</label>
+                                    <input type="number" class="form-control" name="late_payment_fee" 
+                                           value="{{ settings.late_payment_fee }}" step="0.01" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Grace Period (Days)</label>
+                                    <input type="number" class="form-control" name="grace_period" 
+                                           value="{{ settings.grace_period }}" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <h6>Accepted Payment Methods</h6>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="accept_cash" 
+                                               {{ 'checked' if settings.accept_cash }}>
+                                        <label class="form-check-label">Cash</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="accept_bank_transfer" 
+                                               {{ 'checked' if settings.accept_bank_transfer }}>
+                                        <label class="form-check-label">Bank Transfer</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="accept_gcash" 
+                                               {{ 'checked' if settings.accept_gcash }}>
+                                        <label class="form-check-label">GCash</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Settings -->
+                <div class="tab-pane fade" id="backup-settings">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Backup & Security</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6>Database Backup</h6>
+                                <p>Last backup: {{ settings.last_backup_date or 'Never' }}</p>
+                                <button class="btn btn-primary" onclick="backupDatabase()">
+                                    <i class="fas fa-download me-2"></i>Backup Now
+                                </button>
+                            </div>
+                            <div class="mb-4">
+                                <h6>Security Settings</h6>
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="enable2FA" 
+                                           {{ 'checked' if settings.two_factor_enabled }}>
+                                    <label class="form-check-label">Enable Two-Factor Authentication</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="loginNotifications" 
+                                           {{ 'checked' if settings.login_notifications }}>
+                                    <label class="form-check-label">Email notifications for new login attempts</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Settings Navigation Styling */
+    .settings-nav .nav-link {
+        padding: 1.2rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e3e6f0;
+        background: white;
+    }
+
+    .settings-nav .nav-link:hover {
+        transform: translateX(5px);
+        background-color: #f8f9fc;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .settings-nav .nav-link.active {
+        background: linear-gradient(45deg, #da3620, #e74a3b);
+        border-color: transparent;
+        box-shadow: 0 4px 15px rgba(231, 74, 59, 0.2);
+    }
+
+    .settings-nav .nav-link i {
+        font-size: 1.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        margin-right: 1rem;
+        background: rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .settings-nav .nav-link.active i {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    .settings-nav .nav-link .settings-text {
+        flex: 1;
+    }
+
+    .settings-nav .nav-link .fw-bold {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        color: #5a5c69;
+    }
+
+    .settings-nav .nav-link.active .fw-bold,
+    .settings-nav .nav-link.active small {
+        color: white !important;
+    }
+
+    .settings-nav .nav-link small {
+        font-size: 0.8rem;
+        color: #858796;
+        display: block;
+    }
+
+    /* Card Styling */
+    .settings-card {
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateProfile(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch('/admin/settings/profile', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Profile updated successfully!');
+            location.reload();
+        } else {
+            alert('Error updating profile: ' + data.error);
+        }
+    });
+}
+
+function updateSystemSettings(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch('/admin/settings/system', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('System settings updated successfully!');
+        } else {
+            alert('Error updating settings: ' + data.error);
+        }
+    });
+}
+
+function updateNotificationSettings(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch('/admin/settings/notifications', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Notification settings updated successfully!');
+        } else {
+            alert('Error updating settings: ' + data.error);
+        }
+    });
+}
+
+function updatePaymentSettings(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch('/admin/settings/payments', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment settings updated successfully!');
+        } else {
+            alert('Error updating settings: ' + data.error);
+        }
+    });
+}
+
+function backupDatabase() {
+    if (confirm('Do you want to create a backup of the database?')) {
+        fetch('/admin/settings/backup', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Backup created successfully!');
+                location.reload();
+            } else {
+                alert('Error creating backup: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

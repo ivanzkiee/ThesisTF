@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header with Export Options -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Reports & Analytics</h2>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="printReport()">
+                <i class="fas fa-print"></i> Print Report
+            </button>
+            <button class="btn btn-success" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </button>
+            <button class="btn btn-danger" onclick="exportToPDF()">
+                <i class="fas fa-file-pdf"></i> Export to PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Period Selection -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType" onchange="updateReport()">
+                        <option value="financial">Financial Report</option>
+                        <option value="occupancy">Occupancy Report</option>
+                        <option value="maintenance">Maintenance Report</option>
+                        <option value="tenant">Tenant Report</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="updateReport()">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="row mb-4" id="financialOverview">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Revenue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalRevenue">
+                                {{ total_revenue|format_currency }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Collection Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="collectionRate">
+                                {{ collection_rate }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Outstanding Balance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="outstandingBalance">
+                                {{ outstanding_balance|format_currency }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Occupancy Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="occupancyRate">
+                                {{ occupancy_rate }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-home fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Revenue Trend -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Revenue Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports Section -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detailed Report</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>Unit</th>
+                            <th>Tenant</th>
+                            <th>Status</th>
+                            <th>Monthly Rent</th>
+                            <th>Last Payment</th>
+                            <th>Balance</th>
+                            <th>Maintenance Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for unit in units %}
+                        <tr>
+                            <td>{{ unit[0].unit_number }}</td>
+                            <td>
+                                {% if unit[0].current_tenant %}
+                                    {{ unit[0].current_tenant.first_name }} {{ unit[0].current_tenant.last_name }}
+                                {% else %}
+                                    Vacant
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if unit[0].status == 'occupied' 
+                                                    else 'info' if unit[0].status == 'vacant'
+                                                    else 'warning' }}">
+                                    {{ unit[0].status|title }}
+                                </span>
+                            </td>
+                            <td>{{ unit[0].rent_amount|format_currency }}</td>
+                            <td>
+                                {% if unit[0].current_tenant and unit[0].current_tenant.last_payment %}
+                                    {{ unit[0].current_tenant.last_payment.payment_date.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if unit[0].current_tenant %}
+                                    {{ unit[0].current_tenant.balance|format_currency }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ unit[1] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Template -->
+<div id="printTemplate" style="display: none;">
+    <div class="print-header">
+        <h1>Property Management Report</h1>
+        <p>Generated on: <span id="printDate"></span></p>
+    </div>
+    <!-- Print content will be populated via JavaScript -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+<script>
+// Initialize charts
+let revenueTrendChart;
+let paymentDistributionChart;
+
+function initCharts() {
+    // Revenue Trend Chart
+    const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+    const chartData = document.getElementById('chart-data');
+    revenueTrendChart = new Chart(revenueTrendCtx, {
+        type: 'line',
+        data: {
+            labels: JSON.parse(chartData.dataset.labels),
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: JSON.parse(chartData.dataset.revenue),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Payment Distribution Chart
+    const paymentDistributionCtx = document.getElementById('paymentDistributionChart').getContext('2d');
+    paymentDistributionChart = new Chart(paymentDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Paid', 'Pending', 'Overdue'],
+            datasets: [{
+                data: JSON.parse(chartData.dataset.distribution),
+                backgroundColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(255, 205, 86)',
+                    'rgb(255, 99, 132)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// Update report based on selected type and date range
+function updateReport() {
+    const reportType = document.getElementById('reportType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    fetch('/admin/reports/data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            report_type: reportType,
+            start_date: startDate,
+            end_date: endDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateCharts(data);
+        updateStats(data);
+        updateTable(data);
+    });
+}
+
+// Export functions
+function printReport() {
+    window.print();
+}
+
+function exportToExcel() {
+    const table = document.getElementById('reportTable');
+    const wb = XLSX.utils.table_to_book(table);
+    XLSX.writeFile(wb, 'property_report.xlsx');
+}
+
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add report content
+    doc.text('Property Management Report', 20, 20);
+    
+    // Add charts as images
+    const revenueChart = document.getElementById('revenueTrendChart');
+    const paymentChart = document.getElementById('paymentDistributionChart');
+    
+    doc.addImage(revenueChart.toDataURL(), 'PNG', 15, 40, 180, 80);
+    doc.addImage(paymentChart.toDataURL(), 'PNG', 15, 130, 180, 80);
+    
+    // Save the PDF
+    doc.save('property_report.pdf');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    
+    // Set default date range to current month
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('endDate').value = lastDay.toISOString().split('T')[0];
+    
+    updateReport();
+});
+</script>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+.print-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+</style>
+
+<!-- Add this hidden div to store chart data -->
+<div id="chart-data" 
+     data-labels='{{ revenue_labels|tojson|safe }}'
+     data-revenue='{{ revenue_data|tojson|safe }}'
+     data-distribution='{{ payment_distribution|tojson|safe }}'
+     style="display: none;">
+</div>
+{% endblock %} 

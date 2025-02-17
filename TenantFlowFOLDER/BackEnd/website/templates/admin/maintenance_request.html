@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Review Maintenance Request{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Review Maintenance Request</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Request Details</h6>
+                            <p><strong>Priority:</strong> 
+                                <span class="badge bg-{{ 'danger' if request.priority == 'high' else 'warning' if request.priority == 'medium' else 'info' }}">
+                                    {{ request.priority }}
+                                </span>
+                            </p>
+                            <p><strong>Date:</strong> {{ request.created_date.strftime('%Y-%m-%d') }}</p>
+                            <p><strong>Description:</strong> {{ request.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Tenant Information</h6>
+                            <p><strong>Name:</strong> {{ request.tenant.first_name }}</p>
+                            <p><strong>Unit:</strong> {{ request.unit.unit_number }}</p>
+                        </div>
+                    </div>
+
+                    {% if request.image %}
+                    <div class="mb-4">
+                        <h6>Issue Photo</h6>
+                        <img src="{{ url_for('static', filename='uploads/maintenance/' + request.image) }}" 
+                             class="img-fluid" alt="Issue Photo">
+                    </div>
+                    {% endif %}
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Update Status</label>
+                            <select class="form-control" name="status" required>
+                                <option value="pending" {% if request.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="in_progress" {% if request.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="completed" {% if request.status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3">{{ request.notes }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                            <a href="{{ url_for('views.admin_notifications') }}" class="btn btn-secondary">Back</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

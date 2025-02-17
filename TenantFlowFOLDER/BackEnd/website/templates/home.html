@@ -1,0 +1,77 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+    %}
+    <div class="container">
+        <h1 class="text-center">Welcome, {{ current_user.first_name }}</h1>
+        
+        <!-- Notifications Section -->
+        <div id="notifications" class="mt-4">
+            {% for notification in current_user.notifications %}
+            {% if not notification.is_read %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ notification.message }}
+                <button type="button" class="btn-close" 
+                        onclick="markNotificationRead('{{ notification.id }}')"
+                        aria-label="Close"></button>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <h1 align="center">Notes</h1>
+    <ul class="list-group list-group-flush" id="notes">
+      {% for note in current_user.notes %}
+      <li class="list-group-item">
+        {{ note.data }}
+        <button type="button" class="close" onClick="deleteNote('{{ note.id }}')">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+    <form method="POST">
+      <textarea name="note" id="note" class="form-control"></textarea>
+      <br />
+      <div align="center">
+        <button type="submit" class="btn btn-primary">Add Note</button>
+      </div>
+    </form>
+   
+    <script>
+    function markNotificationRead(notificationId) {
+        fetch(`/mark-notification-read/${notificationId}`, {
+            method: 'POST',
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  document.querySelector(`[data-notification-id="${notificationId}"]`)
+                          .remove();
+              }
+          });
+    }
+
+    // Check for new notifications periodically
+    setInterval(() => {
+        fetch('/notifications')
+            .then(response => response.json())
+            .then(notifications => {
+                notifications.forEach(notification => {
+                    // Add new notifications to the page
+                    if (!document.querySelector(`[data-notification-id="${notification.id}"]`)) {
+                        const notificationDiv = document.createElement('div');
+                        notificationDiv.className = 'alert alert-info alert-dismissible fade show';
+                        notificationDiv.setAttribute('data-notification-id', notification.id);
+                        notificationDiv.innerHTML = `
+                            ${notification.message}
+                            <button type="button" class="btn-close" 
+                                    onclick="markNotificationRead(${notification.id})"
+                                    aria-label="Close"></button>
+                        `;
+                        document.getElementById('notifications').appendChild(notificationDiv);
+                    }
+                });
+            });
+    }, 30000); // Check every 30 seconds
+    </script>
+   
+    {% endblock %} 

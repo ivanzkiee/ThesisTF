@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Submit Complaint{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Submit a Complaint</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newComplaintModal">
+            <i class="fas fa-plus"></i> New Complaint
+        </button>
+    </div>
+
+    <!-- Complaints History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">My Complaints History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Complaint ID</th>
+                            <th>Subject</th>
+                            <th>Date Filed</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                        <tr>
+                            <td>#{{ complaint.id }}</td>
+                            <td>{{ complaint.subject }}</td>
+                            <td>{{ complaint.date_filed.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if complaint.status == 'pending' else 'success' }}">
+                                    {{ complaint.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewComplaint('{{ complaint.id }}')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Complaint Modal -->
+<div class="modal fade" id="newComplaintModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Submit New Complaint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="complaintForm">
+                    <div class="mb-3">
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="complaintSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="complaintDescription" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="complaintPriority">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitComplaint()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Complaint Modal -->
+<div class="modal fade" id="viewComplaintModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">View Complaint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="fw-bold">Subject:</label>
+                    <p id="viewComplaintSubject"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Description:</label>
+                    <p id="viewComplaintDescription"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Status:</label>
+                    <p id="viewComplaintStatus"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Admin Reply:</label>
+                    <p id="viewComplaintReply"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitComplaint() {
+    const formData = {
+        subject: document.getElementById('complaintSubject').value,
+        description: document.getElementById('complaintDescription').value,
+        priority: document.getElementById('complaintPriority').value
+    };
+
+    fetch('/tenant/submit-complaint/submit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error submitting complaint: ' + data.error);
+        }
+    });
+}
+
+function viewComplaint(complaintId) {
+    fetch(`/tenant/submit-complaint/${complaintId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('viewComplaintSubject').textContent = data.subject;
+            document.getElementById('viewComplaintDescription').textContent = data.description;
+            document.getElementById('viewComplaintStatus').textContent = data.status;
+            document.getElementById('viewComplaintReply').textContent = data.admin_reply || 'No reply yet';
+            
+            new bootstrap.Modal(document.getElementById('viewComplaintModal')).show();
+        });
+}
+</script>
+{% endblock %} 

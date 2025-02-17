@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Make Payment{% endblock %}
+
+{% block head %}
+<style>
+    .payment-card {
+        transition: transform 0.2s;
+    }
+    .payment-card:hover {
+        transform: translateY(-3px);
+    }
+    .payment-history {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Balance and Payment Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm payment-card">
+                <div class="card-body">
+                    <h5 class="card-title">Current Balance</h5>
+                    <h2 class="text-danger mb-3">₱{{ current_user.balance|format_currency }}</h2>
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#makePaymentModal">
+                        <i class="fas fa-plus-circle me-2"></i>Make New Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Instructions -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Payment Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">GCash Payment:</h6>
+                        <p>Send payment to: 09123456789 (Juan Dela Cruz)</p>
+                        <p class="text-muted">Please keep your reference number for verification.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Bank Transfer:</h6>
+                        <p>Bank: BDO</p>
+                        <p>Account Number: 1234567890</p>
+                        <p>Account Name: Agustin and Son Realty</p>
+                        <p class="text-muted">Please upload a screenshot of your payment confirmation.</p>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold">Cash Payment:</h6>
+                        <p>Visit our office during business hours:</p>
+                        <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
+                        <p>Saturday: 9:00 AM - 12:00 PM</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Payment History</h5>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Filter by Status
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="filterPayments('all')">All</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="filterPayments('pending')">Pending</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="filterPayments('paid')">Paid</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body payment-history">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr class="payment-row" data-status="{{ payment.status }}">
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else payment.created_date.strftime('%Y-%m-%d') }}</td>
+                            <td>₱{{ payment.amount|format_currency }}</td>
+                            <td>{{ payment.payment_method|title }}</td>
+                            <td>
+                                <span class="badge {% if payment.status == 'paid' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ payment.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ payment.reference_number or 'N/A' }}</td>
+                            <td>
+                                {% if payment.status == 'pending' %}
+                                <button class="btn btn-sm btn-primary" onclick="viewPayment('{{ payment.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="cancelPayment('{{ payment.id }}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Make Payment Modal -->
+<div class="modal fade" id="makePaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Make Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" name="amount" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-control" name="payment_method" required onchange="togglePaymentFields(this.value)">
+                            <option value="gcash">GCash</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                    <div id="onlinePaymentFields">
+                        <div class="mb-3">
+                            <label class="form-label">Reference Number</label>
+                            <input type="text" class="form-control" name="reference_number">
+                            <small class="text-muted">Required for GCash and Bank Transfer</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Proof of Payment</label>
+                            <input type="file" class="form-control" name="proof_of_payment" accept="image/*,.pdf">
+                            <small class="text-muted">Required for GCash and Bank Transfer</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitPayment()">Submit Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePaymentFields(method) {
+    const onlineFields = document.getElementById('onlinePaymentFields');
+    if (method === 'cash') {
+        onlineFields.style.display = 'none';
+    } else {
+        onlineFields.style.display = 'block';
+    }
+}
+
+function submitPayment() {
+    const form = document.getElementById('paymentForm');
+    const formData = new FormData(form);
+    
+    fetch("{{ url_for('views.submit_payment') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment submitted successfully!');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to submit payment');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+function viewPayment(paymentId) {
+    window.location.href = `/tenant/payment/${paymentId}`;
+}
+
+function cancelPayment(paymentId) {
+    if (confirm('Are you sure you want to cancel this payment?')) {
+        fetch(`/tenant/cancel-payment/${paymentId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to cancel payment');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+}
+
+function filterPayments(status) {
+    const rows = document.querySelectorAll('.payment-row');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Initialize payment fields visibility
+document.addEventListener('DOMContentLoaded', function() {
+    togglePaymentFields(document.querySelector('[name="payment_method"]').value);
+});
+</script>
+{% endblock %} 
